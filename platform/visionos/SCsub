@@ -14,8 +14,6 @@ swift_file_names = list(map(lambda f: f.name, swift_files))
 mm_files = Glob("*.mm")
 mm_file_names = list(map(lambda f: f.name, mm_files))
 
-visionos_lib = swift_file_names + mm_file_names
-
 env_visionos = env.Clone()
 
 # Configure Swift builder
@@ -24,7 +22,8 @@ apple_platform = env["APPLE_PLATFORM"]
 sdk_path = env["APPLE_SDK_PATH"]
 current_path = Dir(".").abspath
 bridging_header_filename = "bridging_header_visionos.h"
-setup_swift_builder(
+# The Swift sources are compiled together into a single object that's linked into the library.
+swift_module = setup_swift_builder(
     env_visionos,
     apple_platform,
     sdk_path,
@@ -36,7 +35,7 @@ setup_swift_builder(
 # Enable module support
 env_visionos.Append(CCFLAGS=["-fmodules", "-fcxx-modules"])
 
-visionos_lib = env_visionos.add_library("visionos", visionos_lib)
+visionos_lib = env_visionos.add_library("visionos", mm_file_names + list(swift_module))
 if "LIBS_EXTERNAL" in env_visionos:
     env_visionos.Depends(visionos_lib, env_visionos["LIBS_EXTERNAL"])
 

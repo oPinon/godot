@@ -14,8 +14,6 @@ swift_file_names = list(map(lambda f: f.name, swift_files))
 mm_files = Glob("*.mm")
 mm_file_names = list(map(lambda f: f.name, mm_files))
 
-ios_lib = swift_file_names + mm_file_names
-
 env_ios = env.Clone()
 
 # Configure Swift builder
@@ -24,7 +22,8 @@ apple_platform = env["APPLE_PLATFORM"]
 sdk_path = env["APPLE_SDK_PATH"]
 current_path = Dir(".").abspath
 bridging_header_filename = "bridging_header_ios.h"
-setup_swift_builder(
+# The Swift sources are compiled together into a single object that's linked into the library.
+swift_module = setup_swift_builder(
     env_ios,
     apple_platform,
     sdk_path,
@@ -36,7 +35,7 @@ setup_swift_builder(
 # Enable module support
 env_ios.Append(CCFLAGS=["-fmodules", "-fcxx-modules"])
 
-ios_lib = env_ios.add_library("ios", ios_lib)
+ios_lib = env_ios.add_library("ios", mm_file_names + list(swift_module))
 if "LIBS_EXTERNAL" in env_ios:
     env_ios.Depends(ios_lib, env_ios["LIBS_EXTERNAL"])
 
