@@ -28,11 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#include "core/math/vector3.h"
+#include "servers/xr/xr_controller_tracker.h"
 #ifdef VISIONOS_ENABLED
 
-#include "visionos_xr_interface.h"
-
 #include "visionos_simd_helpers.h"
+#include "visionos_xr_interface.h"
 
 #include "core/config/project_settings.h"
 #include "core/error/error_macros.h"
@@ -182,6 +183,8 @@ bool VisionOSXRInterface::initialize() {
 		controllers.initialize(xr_server, this);
 	}
 
+	spatial_events.initialize(xr_server);
+
 	// Running the ARKit session for head tracking, at first
 	run_ar_session();
 
@@ -258,6 +261,8 @@ void VisionOSXRInterface::uninitialize() {
 				xr_server->set_primary_interface(nullptr);
 			}
 		}
+
+		spatial_events.uninitialize(xr_server);
 
 		initialized = false;
 	}
@@ -539,6 +544,10 @@ void VisionOSXRInterface::run_ar_session() {
 
 	// Running the ARSession with the given providers, after it has been configured
 	ar_session_run(ar_session, ar_data_providers);
+}
+
+void VisionOSXRInterface::on_spatial_event(const VisionOSSpatialEvent &p_event) {
+	spatial_events.on_spatial_event(p_event);
 }
 
 CFTimeInterval VisionOSXRInterface::get_trackable_anchor_time() {

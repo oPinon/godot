@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  godot_compositor_services_renderer.h                                  */
+/*  visionos_spatial_events.h                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,25 +30,54 @@
 
 #pragma once
 
-#import "drivers/apple_embedded/godot_renderer.h"
+#ifdef VISIONOS_ENABLED
 
-#import "modules/visionos_xr/visionos_definitions.h"
+#include "visionos_definitions.h"
 
-#import <CompositorServices/CompositorServices.h>
+// Equivalent to https://developer.apple.com/documentation/swiftui/spatialeventcollection/event
+struct VisionOSSpatialEvent {
+	// Ray
+	bool has_ray;
+	Transform3D ray;
 
-@class SpatialEventObjC;
+	// Hand
+	enum class Chirality : int {
+		none = 0,
+		left = 1,
+		right = 2
+	};
+	Chirality chirality;
+	Transform3D hand_pose;
 
-@interface GDTCompositorServicesRenderer : GDTRenderer
+	// Phase
+	enum class Phase : int {
+		unknown = 0,
+		active = 1,
+		cancelled = 2,
+		ended = 3
+	};
+	Phase phase;
+};
 
-- (instancetype)initWithLayerRenderer:(cp_layer_renderer_t)layer_renderer
-						 capabilities:(cp_layer_renderer_capabilities_t)capabilities;
+// Godot representation of visionOS spatial events
+struct VisionOSSpatialEventTracking {
+	// Selection ray when pinched
+	Ref<XRControllerTracker> ray;
 
-- (void)updateXRInterface;
+	struct Hand {
+		// Hand pose when pinching and dragging
+		Ref<XRControllerTracker> tracker;
+		// Only submit the selection ray once per hand/pinch
+		bool has_submitted_ray = false;
+	};
 
-- (void)startRenderLoop;
-- (void)renderFrame;
-- (void)worldRecentered;
+	Hand left_hand;
+	Hand right_hand;
 
-- (void)onSpatialEvent:(SpatialEventObjC *)event;
+	void initialize(XRServer *p_xr_server);
+	void uninitialize(XRServer *p_xr_server);
 
-@end
+	void on_spatial_event(const VisionOSSpatialEvent &);
+};
+
+#endif // VISIONOS_ENABLED
